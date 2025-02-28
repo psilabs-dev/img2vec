@@ -12,8 +12,8 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/psilabs-dev/img2vec',
-    author='psilabs-dev',
-    author_email='113860476+psilabs-dev@users.noreply.github.com',
+    author='Christian Safka, psilabs-dev',
+    author_email='christiansafka@gmail.com, 113860476+psilabs-dev@users.noreply.github.com',
     license='MIT',
     install_requires=[
         'torch',
