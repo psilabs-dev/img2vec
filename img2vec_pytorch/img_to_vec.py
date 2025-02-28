@@ -3,6 +3,11 @@ import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
 
+class Img2VecException(Exception):
+    def __init__(self, devices: List[str]):
+        self.message = f"No such devices found: {','.join(devices)}"
+        super().__init__(self.message)
+
 class Img2Vec():
     RESNET_OUTPUT_SIZES = {
         'resnet18': 512,
@@ -45,7 +50,7 @@ class Img2Vec():
                 device = torch.device(device_name)
                 break
         if not found_device:
-            raise Exception(f"No device matches preferences: {device_preference}")
+            raise Img2VecException(device_preference)
 
         self.device = device
         self.layer_output_size = layer_output_size
