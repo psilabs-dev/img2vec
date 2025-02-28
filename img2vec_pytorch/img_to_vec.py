@@ -1,9 +1,7 @@
-from typing import List, Set
+from typing import List
 import torch
-import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as transforms
-import numpy as np
 
 class Img2Vec():
     RESNET_OUTPUT_SIZES = {
@@ -70,7 +68,7 @@ class Img2Vec():
         :param tensor: If True, get_vec will return a FloatTensor instead of Numpy array
         :returns: Numpy ndarray
         """
-        if type(img) == list:
+        if isinstance(img, list):
             a = [self.normalize(self.to_tensor(self.scaler(im))) for im in img]
             images = torch.stack(a).to(self.device)
             if self.model_name in ['alexnet', 'vgg']:
