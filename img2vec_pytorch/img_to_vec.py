@@ -1,3 +1,4 @@
+from typing import List, Set
 import torch
 import torch.nn as nn
 import torchvision.models as models
@@ -24,14 +25,32 @@ class Img2Vec():
         'efficientnet_b7': 2560
     }
 
-    def __init__(self, cuda=False, model='resnet-18', layer='default', layer_output_size=512, gpu=0):
+    def __init__(self, model='resnet-18', layer='default', layer_output_size=512, gpu=0, device_preference: List[str]=["cpu"]):
         """ Img2Vec
-        :param cuda: If set to True, will run forward pass on GPU
         :param model: String name of requested model
         :param layer: String or Int depending on model.  See more docs: https://github.com/christiansafka/img2vec.git
         :param layer_output_size: Int depicting the output size of the requested layer
+        :param device_preference: List[str] list of devices in order of preference (e.g. ["cuda", "cpu"]).
         """
-        self.device = torch.device(f"cuda:{gpu}" if cuda else "cpu")
+
+        device: torch.device
+        found_device = False
+        for device_name in device_preference:
+            match device_name:
+                case "cpu":
+                    found_device = True
+                case "cuda":
+                    found_device = torch.cuda.is_available()
+                case "mps":
+                    found_device = torch.backends.mps.is_available()
+            if found_device:
+                device = torch.device(device_name)
+                print(f"Set device to {device}")
+                break
+        if not found_device:
+            raise Exception(f"No device matches preferences: {device_preference}")
+
+        self.device = device
         self.layer_output_size = layer_output_size
         self.model_name = model
 
@@ -123,7 +142,7 @@ class Img2Vec():
                 layer = model._modules.get(layer)
             return model, layer
         elif model_name == 'resnet-18':
-            model = models.resnet18(pretrained=True)
+            model = models.resnet18(weights='ResNet18_Weights.DEFAULT')
             if layer == 'default':
                 layer = model._modules.get('avgpool')
                 self.layer_output_size = 512
@@ -195,3 +214,6 @@ class Img2Vec():
 
         else:
             raise KeyError('Model %s was not found' % model_name)
+
+if __name__ == "__main__":
+    Img2Vec(device_preference=["cuda", "cpu"])

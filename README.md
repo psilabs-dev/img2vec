@@ -44,7 +44,7 @@ from img2vec_pytorch import Img2Vec
 from PIL import Image
 
 # Initialize Img2Vec with GPU
-img2vec = Img2Vec(cuda=True)
+img2vec = Img2Vec(device_preference=["cuda", "cpu"])
 
 # Read in an image (rgb format)
 img = Image.open('test.jpg')
