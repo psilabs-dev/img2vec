@@ -45,7 +45,6 @@ class Img2Vec():
                     found_device = torch.backends.mps.is_available()
             if found_device:
                 device = torch.device(device_name)
-                print(f"Set device to {device}")
                 break
         if not found_device:
             raise Exception(f"No device matches preferences: {device_preference}")
