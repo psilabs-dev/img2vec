@@ -7,13 +7,13 @@ with open(os.path.join(current_folder, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='img2vec_pytorch',
-    version='1.0.1',
+    version='1.2.0',
     description='Use pre-trained models in PyTorch to extract vector embeddings for any image',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/christiansafka/img2vec',
-    author='Christian Safka',
-    author_email='christiansafka@gmail.com',
+    url='https://github.com/psilabs-dev/img2vec',
+    author='psilabs-dev',
+    author_email='113860476+psilabs-dev@users.noreply.github.com',
     license='MIT',
     install_requires=[
         'torch',
