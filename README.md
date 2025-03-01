@@ -1,5 +1,12 @@
 # Image 2 Vec with PyTorch
 
+> Repository forked from [img2vec](https://github.com/christiansafka/img2vec), removed some noisy warnings and supports Pytorch Metal.
+
+Installation:
+```sh
+pip install img2vec-pytorch-2
+```
+
 Medium post on building the first version from scratch:  https://becominghuman.ai/extract-a-feature-vector-for-any-image-with-pytorch-9717561d1d4c
 
 ### Applications of image embeddings:
@@ -32,7 +39,14 @@ Requires Pytorch: http://pytorch.org/
 
 ```conda install -c pytorch-nightly torchvision```
 
-```pip install img2vec_pytorch```
+```sh
+pip install img2vec-pytorch-2
+```
+
+Pytorch Metal is [supported](https://developer.apple.com/metal/pytorch/):
+```sh
+pip3 install --pre torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/nightly/cpu
+```
 
 ## Run test
 
@@ -59,7 +73,7 @@ vectors = img2vec.get_vec(list_of_PIL_images)
  * Sklearn ```pip install scikit-learn```
 
 ## Running the example
-```git clone https://github.com/christiansafka/img2vec.git```
+```git clone https://github.com/psilabs-dev/img2vec.git```
 
 ```cd img2vec/example```
 
