@@ -1,14 +1,38 @@
-from typing import List
+import abc
+from typing import List, Union
+import PIL
+import PIL.Image
 import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
+
+class AbstractImg2Vec(abc.ABC):
+    """
+    Interface for an image embedding service.
+    """
+
+    model: torch.nn.Module = None
+
+    @abc.abstractmethod
+    def download_model(self):
+        """
+        Downloads model to the local filesystem.
+        """
+        ...
+
+    @abc.abstractmethod
+    def get_vec(self, img: Union[List[PIL.Image.Image], PIL.Image.Image], tensor=False) -> Union[List[float], torch.Tensor]:
+        """
+        Create embeddings for an image (or list of images) and return it as a list of floats or as a tensor (or corresponding list).
+        """
+        ...
 
 class Img2VecException(Exception):
     def __init__(self, devices: List[str]):
         self.message = f"No such devices found: {','.join(devices)}"
         super().__init__(self.message)
 
-class Img2Vec():
+class Img2Vec(AbstractImg2Vec):
     RESNET_OUTPUT_SIZES = {
         'resnet18': 512,
         'resnet34': 512,
@@ -55,17 +79,17 @@ class Img2Vec():
         self.device = device
         self.layer_output_size = layer_output_size
         self.model_name = model
-
-        self.model, self.extraction_layer = self._get_model_and_layer(model, layer)
-
-        self.model = self.model.to(self.device)
-
-        self.model.eval()
-
+        self.layer = layer
         self.scaler = transforms.Resize((224, 224))
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                               std=[0.229, 0.224, 0.225])
         self.to_tensor = transforms.ToTensor()
+
+    def download_model(self):
+        if self.model is None:
+            self.model, self.extraction_layer = self._get_model_and_layer(self.model_name, self.layer)
+            self.model = self.model.to(self.device)
+            self.model.eval()
 
     def get_vec(self, img, tensor=False):
         """ Get vector embedding from PIL image
@@ -73,6 +97,8 @@ class Img2Vec():
         :param tensor: If True, get_vec will return a FloatTensor instead of Numpy array
         :returns: Numpy ndarray
         """
+        if self.model is None:
+            raise TypeError("Model is not loaded!")
         if isinstance(img, list):
             a = [self.normalize(self.to_tensor(self.scaler(im))) for im in img]
             images = torch.stack(a).to(self.device)
