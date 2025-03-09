@@ -4,7 +4,7 @@ COPY requirements.txt       /app/requirements.txt
 RUN apt-get update && \
     pip install -U pip && \
     pip install -r /app/requirements.txt && \
-    pip install "fastapi[standard]"
+    pip install "fastapi[standard]" python-dotenv
 
 COPY img2vec_pytorch        /app/img2vec_pytorch
 COPY setup.cfg              /app/setup.cfg
