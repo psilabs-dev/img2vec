@@ -7,7 +7,7 @@ Installation:
 pip install img2vec-pytorch-2
 ```
 
-### Docker Server Mode
+### Image Embeddings as a Docker Service
 Run as a FastAPI server to create embeddings from images via an HTTP interface (may also add option for GPU resource provisioning if necessary):
 ```sh
 docker build img2vec
@@ -21,6 +21,7 @@ curl -X POST localhost:8000/api/embeddings \
     -H "Content-Type: multipart/form-data" \
     -F "file=@image-to-test.png"
 ```
+Start 3 image embedding workers behind a load balancer: `docker compose -f deployment/docker-compose.yml up --build --remove-orphans`
 
 ---
 

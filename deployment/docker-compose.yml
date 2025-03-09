@@ -1,0 +1,15 @@
+services:
+  img2vec:
+    build: ..
+    command: ["--host", "0.0.0.0"]
+    deploy:
+      replicas: 3
+
+  proxy:
+    build: ./nginx
+    container_name: proxy
+    ports:
+      - 8000:80
+    depends_on:
+      - img2vec
+    restart: always
