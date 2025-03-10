@@ -39,9 +39,10 @@ def get_config():
     return config
 
 class ModelContext:
-    def __init__(self, model_instance):
-        self.model = model_instance
+    def __init__(self, img2vec: img_to_vec.AbstractImg2Vec):
+        self.img2vec = img2vec
         self.lock = threading.Lock()
+
 model_context = ModelContext(img_to_vec.Img2Vec(
     model=config.model_name,
     layer=config.model_layer,
@@ -49,6 +50,7 @@ model_context = ModelContext(img_to_vec.Img2Vec(
     gpu=config.gpu,
     device_preference=config.device_preference
 ))
+
 def get_model_context():
     return model_context
 ModelContextT: TypeAlias = Annotated[ModelContext, Depends(get_model_context)]
@@ -57,7 +59,7 @@ ModelContextT: TypeAlias = Annotated[ModelContext, Depends(get_model_context)]
 async def lifespan(_: FastAPI):
     try:
         LOGGER.info("Initializing model.")
-        model_context.model.download_model()
+        model_context.img2vec.download_model()
     except Exception as e:
         LOGGER.error(f"Error initializing model: {e}")
     yield
@@ -85,7 +87,7 @@ def get_embeddings(model_context: ModelContextT, file: UploadFile):
         )
     try:
         with model_context.lock:
-            embeddings = model_context.model.get_vec(img).tolist()
+            embeddings = model_context.img2vec.get_vec(img).tolist()
             LOGGER.debug(f"Got embeddings: {embeddings}")
             return JSONResponse({
                 "embeddings": embeddings

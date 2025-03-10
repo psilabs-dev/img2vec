@@ -1,10 +1,13 @@
 import abc
-from typing import List, Union
+from typing import List, TypeAlias, Union
 import PIL
 import PIL.Image
+import numpy
 import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
+
+FloatArrayT: TypeAlias = numpy.typing.NDArray[numpy.float64]
 
 class AbstractImg2Vec(abc.ABC):
     """
@@ -18,14 +21,12 @@ class AbstractImg2Vec(abc.ABC):
         """
         Downloads model to the local filesystem.
         """
-        ...
 
     @abc.abstractmethod
-    def get_vec(self, img: Union[List[PIL.Image.Image], PIL.Image.Image], tensor=False) -> Union[List[float], torch.Tensor]:
+    def get_vec(self, img: Union[List[PIL.Image.Image], PIL.Image.Image], tensor=False) -> Union[FloatArrayT, torch.Tensor]:
         """
         Create embeddings for an image (or list of images) and return it as a list of floats or as a tensor (or corresponding list).
         """
-        ...
 
 class Img2VecException(Exception):
     def __init__(self, devices: List[str]):
