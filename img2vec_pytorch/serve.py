@@ -3,12 +3,13 @@ import io
 import logging
 import os
 import threading
-from typing import Annotated, TypeAlias
+from typing import Annotated, List, Optional, TypeAlias
 
 import dotenv
 from fastapi import Depends, FastAPI, UploadFile, status
 from fastapi.responses import JSONResponse
 from PIL import Image
+from pydantic import BaseModel
 from img2vec_pytorch import img_to_vec
 
 LOGGER = logging.getLogger("uvicorn.img2vec")
@@ -37,6 +38,10 @@ class ApplicationConfiguration:
 config = ApplicationConfiguration()
 def get_config():
     return config
+
+class CreateEmbeddingsResponse(BaseModel):
+    error: Optional[str] = None
+    embeddings: Optional[List[float]] = None
 
 class ModelContext:
     def __init__(self, img2vec: img_to_vec.AbstractImg2Vec):
@@ -81,20 +86,15 @@ def get_embeddings(model_context: ModelContextT, file: UploadFile):
         LOGGER.debug("Successfully converted image from file.")
     except Exception as e:
         LOGGER.error(f"Error processing image: {e}")
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"message": "Invalid image file"}
-        )
+        response = CreateEmbeddingsResponse(error="Invalid image file.")
+        return JSONResponse(response.model_dump(), status_code=status.HTTP_400_BAD_REQUEST)
     try:
         with model_context.lock:
             embeddings = model_context.img2vec.get_vec(img).tolist()
             LOGGER.debug(f"Got embeddings: {embeddings}")
-            return JSONResponse({
-                "embeddings": embeddings
-            })
+            response = CreateEmbeddingsResponse(embeddings=embeddings)
+            return JSONResponse(response.model_dump())
     except Exception as e:
         LOGGER.exception(f"Error generating embeddings: {e}")
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"message": "Internal Server Error"}
-        )
+        response = CreateEmbeddingsResponse(error="Internal Server Error")
+        return JSONResponse(response.model_dump(), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
