@@ -1,5 +1,10 @@
 FROM python:3.12
 
+# if specified, will download model by default.
+# this can be helpful if you want to deploy the container
+# in a network isolated environment.
+ARG MODEL_NAME
+
 COPY requirements.txt       /app/requirements.txt
 RUN apt-get update && \
     pip install -U pip && \
@@ -15,7 +20,8 @@ COPY README.md              /app/README.md
 
 RUN cd /app && \
     pip install . && \
-    cd / && rm -rf /app
+    cd / && rm -rf /app && \
+    python -m img2vec_pytorch.serve
 
 ENTRYPOINT [ "uvicorn", "img2vec_pytorch.serve:app" ]
 HEALTHCHECK CMD [ "curl", "127.0.0.1:8000/api/healthcheck" ]

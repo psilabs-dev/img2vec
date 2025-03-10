@@ -130,3 +130,8 @@ def create_embeddings_batch(model_context: ModelContextT, files: List[UploadFile
         LOGGER.exception(f"Error generating embeddings: {e}")
         response = BatchCreateEmbeddingsResponse(error="Internal Server Error")
         return JSONResponse(response.model_dump(), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+if __name__ == "__main__":
+    model_name = os.getenv("MODEL_NAME")
+    if model_name:
+        model_context.img2vec.download_model()
