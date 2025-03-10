@@ -43,6 +43,10 @@ class CreateEmbeddingsResponse(BaseModel):
     error: Optional[str] = None
     embeddings: Optional[List[float]] = None
 
+class BatchCreateEmbeddingsResponse(BaseModel):
+    error: Optional[str] = None
+    embeddings_list: Optional[List[List[float]]] = None
+
 class ModelContext:
     def __init__(self, img2vec: img_to_vec.AbstractImg2Vec):
         self.img2vec = img2vec
@@ -79,22 +83,50 @@ async def get_healthcheck():
     })
 
 @app.post("/api/embeddings")
-def get_embeddings(model_context: ModelContextT, file: UploadFile):
+def create_embeddings(model_context: ModelContextT, file: UploadFile):
+    """
+    Create embeddings from an image.
+
+    Example:
+    ```
+    curl -X POST localhost:8000/api/embeddings -H "accept: application/json" -H "Content-Type: multipart/form-data" -F "file=@image.png"
+    ```
+    """
     try:
         contents = file.file.read()
-        img = Image.open(io.BytesIO(contents)).convert("RGB")
-        LOGGER.debug("Successfully converted image from file.")
-    except Exception as e:
-        LOGGER.error(f"Error processing image: {e}")
-        response = CreateEmbeddingsResponse(error="Invalid image file.")
-        return JSONResponse(response.model_dump(), status_code=status.HTTP_400_BAD_REQUEST)
-    try:
+        image = Image.open(io.BytesIO(contents)).convert('RGB')
         with model_context.lock:
-            embeddings = model_context.img2vec.get_vec(img).tolist()
+            embeddings = model_context.img2vec.get_vec(image).tolist()
             LOGGER.debug(f"Got embeddings: {embeddings}")
             response = CreateEmbeddingsResponse(embeddings=embeddings)
             return JSONResponse(response.model_dump())
     except Exception as e:
         LOGGER.exception(f"Error generating embeddings: {e}")
         response = CreateEmbeddingsResponse(error="Internal Server Error")
+        return JSONResponse(response.model_dump(), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@app.post("/api/embeddings-batch")
+def create_embeddings_batch(model_context: ModelContextT, files: List[UploadFile]):
+    """
+    Batch create embeddings from multiple images.
+
+    Example:
+    ```
+    curl -X POST localhost:8000/api/embeddings-batch -H "accept: application/json" -H "Content-Type: multipart/form-data" -F "files=@image1.png" -F "files=@image2.png"
+    ```
+    """
+    try:
+        batch_images = []
+        for f in files:
+            contents = f.file.read()
+            image = Image.open(io.BytesIO(contents)).convert('RGB')
+            batch_images.append(image)
+        with model_context.lock:
+            embeddings_list = model_context.img2vec.get_vec(batch_images).tolist()
+            LOGGER.debug(f"Got embeddings: {embeddings_list}")
+            response = BatchCreateEmbeddingsResponse(embeddings_list=embeddings_list)
+            return JSONResponse(response.model_dump())
+    except Exception as e:
+        LOGGER.exception(f"Error generating embeddings: {e}")
+        response = BatchCreateEmbeddingsResponse(error="Internal Server Error")
         return JSONResponse(response.model_dump(), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
