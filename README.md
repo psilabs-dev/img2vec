@@ -7,22 +7,6 @@ Installation:
 pip install img2vec-pytorch-2
 ```
 
-### Image Embeddings as a Docker Service
-Run as a FastAPI server to create embeddings from images via an HTTP interface (may also add option for GPU resource provisioning if necessary):
-```sh
-docker build img2vec
-docker run -it --rm -p 8000:8000 img2vec --host 0.0.0.0
-```
-
-Test with an image:
-```sh
-curl -X POST localhost:8000/api/embeddings \
-    -H "accept: application/json" \
-    -H "Content-Type: multipart/form-data" \
-    -F "file=@image-to-test.png"
-```
-Start 3 image embedding workers behind a load balancer: `docker compose -f deployment/docker-compose.yml up --build --remove-orphans`
-
 ---
 
 Medium post on building the first version from scratch:  https://becominghuman.ai/extract-a-feature-vector-for-any-image-with-pytorch-9717561d1d4c
