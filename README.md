@@ -7,6 +7,8 @@ Installation:
 pip install img2vec-pytorch-2
 ```
 
+---
+
 Medium post on building the first version from scratch:  https://becominghuman.ai/extract-a-feature-vector-for-any-image-with-pytorch-9717561d1d4c
 
 ### Applications of image embeddings:
@@ -50,7 +52,7 @@ pip3 install --pre torch torchvision torchaudio --extra-index-url https://downlo
 
 ## Run test
 
-```python -m img2vec_pytorch.test_img_to_vec```
+```python -m unittest discover tests```
 
 ## Using img2vec as a library
 ```python
