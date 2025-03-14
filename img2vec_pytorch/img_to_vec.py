@@ -1,5 +1,4 @@
-import abc
-from typing import List, TypeAlias, Union
+from typing import List, Tuple, TypeAlias, Union
 import PIL
 import PIL.Image
 import numpy
@@ -9,32 +8,14 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 
 FloatArrayT: TypeAlias = numpy.typing.NDArray[numpy.float64]
-
-class AbstractImg2Vec(abc.ABC):
-    """
-    Interface for an image embedding service.
-    """
-
-    model: torch.nn.Module = None
-
-    @abc.abstractmethod
-    def download_model(self) -> "AbstractImg2Vec":
-        """
-        Downloads model to the local filesystem.
-        """
-
-    @abc.abstractmethod
-    def get_vec(self, img: Union[List[PIL.Image.Image], PIL.Image.Image], tensor=False) -> Union[FloatArrayT, torch.Tensor]:
-        """
-        Create embeddings for an image (or list of images) and return it as a list of floats or as a tensor (or corresponding list).
-        """
+ImageOrImageListT: TypeAlias = Union[List[PIL.Image.Image], PIL.Image.Image]
 
 class Img2VecException(Exception):
     def __init__(self, devices: List[str]):
         self.message = f"No such devices found: {','.join(devices)}"
         super().__init__(self.message)
 
-class Img2Vec(AbstractImg2Vec):
+class Img2Vec:
     RESNET_OUTPUT_SIZES = {
         'resnet18': 512,
         'resnet34': 512,
@@ -54,7 +35,12 @@ class Img2Vec(AbstractImg2Vec):
         'efficientnet_b7': 2560
     }
 
-    def __init__(self, model='resnet-18', layer='default', layer_output_size=512, gpu=0, device_preference: List[str]=["cpu"]):
+    model: torch.nn.Module = None
+
+    def __init__(
+            self, model: str='resnet-18', layer: Union[str, int]='default', 
+            layer_output_size: int=512, device_preference: List[str]=["cpu"]
+    ):
         """ Img2Vec
         :param model: String name of requested model
         :param layer: String or Int depending on model.  See more docs: https://github.com/christiansafka/img2vec.git
@@ -87,20 +73,29 @@ class Img2Vec(AbstractImg2Vec):
                                               std=[0.229, 0.224, 0.225])
         self.to_tensor = transforms.ToTensor()
 
+    def is_downloaded(self) -> bool:
+        return hasattr(self, 'model') and (self.model is not None)
+
     def download_model(self) -> "Img2Vec":
-        if self.model is None:
+        if not self.is_downloaded():
             self.model, self.extraction_layer = self._get_model_and_layer(self.model_name, self.layer)
-            self.model = self.model.to(self.device)
+            self.model = self.model.to(device=self.device)
             self.model.eval()
         return self
 
-    def get_vec(self, img, tensor=False):
+    def close(self):
+        if isinstance(self.model, torch.nn.Module):
+            del self.model
+
+    def get_vec(
+            self, img: ImageOrImageListT, tensor: bool=False
+    ) -> Union[FloatArrayT, torch.Tensor]:
         """ Get vector embedding from PIL image
         :param img: PIL Image or list of PIL Images
         :param tensor: If True, get_vec will return a FloatTensor instead of Numpy array
         :returns: Numpy ndarray
         """
-        if self.model is None:
+        if not self.is_downloaded():
             raise TypeError("Model is not loaded!")
         if isinstance(img, list):
             a = [self.normalize(self.to_tensor(self.scaler(im))) for im in img]
@@ -157,7 +152,7 @@ class Img2Vec(AbstractImg2Vec):
                 else:
                     return my_embedding.numpy()[0, :, 0, 0]
 
-    def _get_model_and_layer(self, model_name: str, layer):
+    def _get_model_and_layer(self, model_name: str, layer: Union[str, int]) -> Tuple[torch.nn.Module, torch.nn.Module]:
         """ Internal method for getting layer from model
         :param model_name: model name such as 'resnet-18'
         :param layer: layer as a string for resnet-18 or int for alexnet
